@@ -1,0 +1,166 @@
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+<style>
+  :root {
+    --primary-color: #385da9;
+    /* Corporate Blue */
+    --secondary-color: #faac3c;
+    /* Corporate Yellow */
+    --accent-color: #e5442a;
+    /* Corporate Red/Orange */
+  }
+
+  /* Corporate Identity Utilities */
+  .text-corp-primary {
+    color: var(--primary-color) !important;
+  }
+
+  .text-corp-secondary {
+    color: var(--secondary-color) !important;
+  }
+
+  .text-corp-accent {
+    color: var(--accent-color) !important;
+  }
+
+  .bg-corp-primary {
+    background-color: var(--primary-color) !important;
+  }
+
+  /* Form Focus Overrides */
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--secondary-color) !important;
+    --tw-ring-color: var(--secondary-color) !important;
+    box-shadow: 0 0 0 1px var(--secondary-color) !important;
+  }
+
+  /* Toggle Switch Override */
+  .toggle-checkbox:checked {
+    border-color: var(--primary-color);
+  }
+
+  .toggle-checkbox:checked+.toggle-label {
+    background-color: var(--primary-color);
+  }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background-color: #f3f4f6;
+    background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Hide Number Spinners */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type=number] {
+    -moz-appearance: textfield;
+  }
+
+  /* Loader */
+  .loader {
+    border-top-color: #0d9488;
+    -webkit-animation: spinner 1.5s linear infinite;
+    animation: spinner 1.5s linear infinite;
+  }
+
+  /* SAVE BUTTON (Blue) */
+  .btn-primary-custom {
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+    border: none;
+    padding: 12px 24px;
+    font-weight: bold;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(56, 93, 169, 0.3);
+    transition: all 0.2s;
+    text-align: center;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 48px;
+  }
+
+  .btn-primary-custom:hover {
+    background-color: #2c4a87 !important;
+    /* Darker Blue */
+    transform: translateY(-1px);
+  }
+
+  /* ADD BUTTON (Yellow - High Visibility) */
+  .btn-add-custom {
+    background-color: var(--secondary-color) !important;
+    color: #0f172a !important;
+    /* Dark text for contrast on yellow */
+    font-weight: 800;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(250, 172, 60, 0.3);
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s;
+  }
+
+  .btn-add-custom:hover {
+    background-color: #eebb40 !important;
+    transform: translateY(-1px);
+  }
+
+  .btn-add-custom svg {
+    margin-right: 8px;
+  }
+
+  /* ACCENT/DELETE BUTTONS */
+  .btn-delete-custom {
+    color: var(--accent-color) !important;
+  }
+
+  .btn-delete-custom:hover {
+    color: #b93621 !important;
+    background-color: #fee2e2;
+  }
+
+  @keyframes spinner {
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+</style>

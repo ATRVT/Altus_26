@@ -1,0 +1,446 @@
+<script>
+    // Global State
+    let studentsList = [];
+    let educationalBase = [];
+    let therapeuticBase = []; // Flat list of programs
+    let currentSession = [];
+    let sessionId = null;
+
+    // Mock Data for Local Testing (remove or wrap in condition for prod)
+    const isLocal = location.hostname === 'localhost' || location.hostname === '';
+
+    function init() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('fecha-sesion').value = today;
+        sessionId = 'SES-' + Date.now();
+
+        loadInitialData();
+        setupListeners();
+    }
+
+    function loadInitialData() {
+        // Use google.script.run if available, else mock
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run.withSuccessHandler(populateFields).getData();
+        } else {
+            console.log('Running in generic/local mode. Using mock data.');
+            const mockData = {
+                students: ['Juan Perez', 'Maria Garcia', 'Carlos Lopez'],
+                educational: [
+                    { grado: '3º', materia: 'Matemáticas', ocp: 'Suma de dos digitos' },
+                    { grado: '3º', materia: 'Matemáticas', ocp: 'Resta simple' },
+                    { grado: '1º', materia: 'Ciencia', ocp: 'Partes del cuerpo' }
+                ],
+                therapeutic: ['Control de Impulsos', 'Atención Conjunta', 'Habilidades Sociales']
+            };
+            populateFields(mockData);
+        }
+    }
+
+    function populateFields(data) {
+        studentsList = data.students || [];
+        educationalBase = data.educational || [];
+        therapeuticBase = data.therapeutic || [];
+
+        const studentSelect = document.getElementById('estudiante');
+        const dashStudent = document.getElementById('dash-student');
+
+        // Clear and add default
+        studentSelect.innerHTML = '<option value="">Seleccione estudiante...</option>';
+        dashStudent.innerHTML = '<option value="">Todos</option>';
+
+        // Dashboard Student populate
+        studentsList.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            studentSelect.appendChild(opt);
+
+            // Dashboard clone
+            const dOpt = opt.cloneNode(true);
+            dashStudent.appendChild(dOpt);
+        });
+
+        // Dashboard Program populate (Merge Materias + Therapeutic Programs)
+        const dashProg = document.getElementById('dash-program');
+        dashProg.innerHTML = '<option value="">Todos</option>';
+
+        const allPrograms = new Set();
+        educationalBase.forEach(e => allPrograms.add(e.materia));
+        therapeuticBase.forEach(t => allPrograms.add(t));
+
+        [...allPrograms].sort().forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p;
+            opt.textContent = p;
+            dashProg.appendChild(opt);
+        });
+    }
+
+    function setupListeners() {
+        // Toggle Type
+        document.getElementById('type-toggle').addEventListener('change', (e) => {
+            const isTherapeutic = e.target.checked;
+            if (isTherapeutic) {
+                document.getElementById('educational-fields').classList.add('hidden');
+                document.getElementById('therapeutic-fields').classList.remove('hidden');
+                loadTherapeuticPrograms();
+            } else {
+                document.getElementById('educational-fields').classList.remove('hidden');
+                document.getElementById('therapeutic-fields').classList.add('hidden');
+            }
+        });
+
+        // Educational Cascading Logic
+        const gradoSel = document.getElementById('grado');
+        const materiaSel = document.getElementById('materia');
+
+        [gradoSel, materiaSel].forEach(el => el.addEventListener('change', updateOCP));
+
+        // Add to Temp
+        document.getElementById('btn-add-temp').addEventListener('click', addToTemp);
+
+        // Remove row (delegate)
+        document.getElementById('temp-table-body').addEventListener('click', (e) => {
+            if (e.target.closest('.delete-row-btn')) {
+                const row = e.target.closest('tr');
+                const index = row.dataset.index;
+                currentSession.splice(index, 1);
+                renderTempTable();
+            }
+        });
+
+        // Save Session
+        document.getElementById('btn-save-session').addEventListener('click', saveSessionToSheets);
+
+        // Nav
+        document.getElementById('nav-registros').addEventListener('click', () => switchView('registros'));
+        document.getElementById('nav-dashboard').addEventListener('click', () => switchView('dashboard'));
+
+        // Dashboard PIN
+        document.getElementById('btn-verify-pin').addEventListener('click', verifyPin);
+
+        // Update Chart
+        document.getElementById('btn-update-dash').addEventListener('click', updateDashboardFilter);
+
+        // Save Recommendation
+        document.getElementById('btn-save-rec').addEventListener('click', saveRecommendation);
+    }
+
+    function loadTherapeuticPrograms() {
+        const sel = document.getElementById('programa-terapeutico');
+        if (sel.options.length > 1) return; // Already loaded
+
+        therapeuticBase.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p;
+            opt.textContent = p;
+            sel.appendChild(opt);
+        });
+    }
+
+    function updateOCP() {
+        const grado = document.getElementById('grado').value;
+        const materia = document.getElementById('materia').value;
+        const ocpSel = document.getElementById('ocp');
+
+        ocpSel.innerHTML = '<option value="">Seleccione OCP...</option>';
+
+        if (!grado || !materia) {
+            ocpSel.disabled = true;
+            return;
+        }
+
+        const matches = educationalBase.filter(item => item.grado === grado && item.materia === materia);
+
+        if (matches.length > 0) {
+            ocpSel.disabled = false;
+            matches.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.ocp;
+                opt.textContent = m.ocp;
+                ocpSel.appendChild(opt);
+            });
+        } else {
+            ocpSel.innerHTML = '<option value="">No hay OCPs disponibles</option>';
+            ocpSel.disabled = true;
+        }
+    }
+
+    function addToTemp() {
+        const isTherapeutic = document.getElementById('type-toggle').checked;
+        const student = document.getElementById('estudiante').value;
+
+        if (!student) {
+            Swal.fire({ icon: 'error', title: 'Falta información', text: 'Seleccione un estudiante' });
+            return;
+        }
+
+        const record = {
+            idSesion: sessionId,
+            fechaSesion: document.getElementById('fecha-sesion').value,
+            estudiante: student,
+            tipoRegistro: isTherapeutic ? 'Terapéutico' : 'Educativo',
+            grado: document.getElementById('grado').value,
+            materia: document.getElementById('materia').value,
+            ocp: document.getElementById('ocp').value,
+            // If therapeutic, map program to standard field or handling
+            programaTerapeutico: document.getElementById('programa-terapeutico').value,
+
+            uac: document.getElementById('uac').value || 0,
+            uai: document.getElementById('uai').value || 0,
+            nivelAyuda: document.getElementById('nivel-ayuda').value,
+            reforzador: document.getElementById('reforzador').value,
+            programaReforzamiento: document.getElementById('prog-ref').value
+        };
+
+        // Specific Validation
+        if (isTherapeutic && !record.programaTerapeutico) {
+            Swal.fire('Error', 'Seleccione un programa terapéutico', 'error');
+            return;
+        }
+        if (!isTherapeutic && (!record.grado || !record.materia)) {
+            Swal.fire('Error', 'Seleccione grado y materia', 'error');
+            return;
+        }
+
+        // Normalize for table/saving
+        // Requirement says Col G is "Materia_Programa"
+        if (isTherapeutic) {
+            record.materia = record.programaTerapeutico; // Overwrite or map
+            record.ocp = '-';
+            record.grado = '-';
+        }
+
+        currentSession.push(record);
+        renderTempTable();
+
+        // Reset simple fields
+        document.getElementById('uac').value = '';
+        document.getElementById('uai').value = '';
+    }
+
+    function renderTempTable() {
+        const tbody = document.getElementById('temp-table-body');
+        const container = document.getElementById('temp-table-container');
+        tbody.innerHTML = '';
+
+        if (currentSession.length === 0) {
+            container.classList.add('hidden');
+            return;
+        }
+
+        container.classList.remove('hidden');
+
+        currentSession.forEach((r, idx) => {
+            const detail = r.tipoRegistro === 'Educativo' ? `${r.materia} - ${r.ocp}` : r.materia;
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const row = `
+      <tr class="bg-white border-b hover:bg-gray-50 transition" data-index="${idx}">
+         <td class="px-4 py-3 font-medium text-gray-900">${time}</td>
+         <td class="px-4 py-3">
+           <span class="${r.tipoRegistro === 'Educativo' ? 'bg-blue-100 text-corp-primary' : 'bg-orange-100 text-corp-secondary'} text-xs font-bold mr-2 px-2.5 py-0.5 rounded">
+             ${r.tipoRegistro}
+           </span>
+         </td>
+         <td class="px-4 py-3 text-gray-600 truncate max-w-xs" title="${detail}">${detail}</td>
+         <td class="px-4 py-3 font-mono text-xs font-bold">${r.uac} / ${r.uai}</td>
+         <td class="px-4 py-3 text-right">
+            <button class="delete-row-btn btn-delete-custom transition-colors transform hover:scale-110">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+         </td>
+      </tr>
+    `;
+            tbody.insertAdjacentHTML('beforeend', row);
+        });
+    }
+
+    function saveSessionToSheets() {
+        if (currentSession.length === 0) return;
+
+        Swal.fire({
+            title: 'Guardando...',
+            text: 'Enviando datos a la hoja de cálculo',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+                .withSuccessHandler((res) => {
+                    Swal.fire('¡Éxito!', res.message, 'success');
+                    currentSession = [];
+                    renderTempTable();
+                    sessionId = 'SES-' + Date.now(); // New Session
+                })
+                .withFailureHandler((err) => {
+                    Swal.fire('Error', 'Fallo al guardar: ' + err.message, 'error');
+                })
+                .saveSession(currentSession);
+        } else {
+            // Local mock
+            setTimeout(() => {
+                console.log('Saved:', currentSession);
+                Swal.fire('¡Éxito!', '(Simulacro) Sesión guardada', 'success');
+                currentSession = [];
+                renderTempTable();
+                sessionId = 'SES-' + Date.now();
+            }, 1500);
+        }
+    }
+
+    // ---- DASHBOARD LOGIC ----
+
+    function switchView(viewName) {
+        if (viewName === 'registros') {
+            document.getElementById('view-registros').classList.remove('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('nav-registros').classList.add('text-teal-600', 'bg-gray-50');
+            document.getElementById('nav-dashboard').classList.remove('text-teal-600', 'bg-gray-50');
+        } else {
+            document.getElementById('view-registros').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.remove('hidden');
+            document.getElementById('nav-dashboard').classList.add('text-teal-600', 'bg-gray-50');
+            document.getElementById('nav-registros').classList.remove('text-teal-600', 'bg-gray-50');
+        }
+    }
+
+    function verifyPin() {
+        const pin = document.getElementById('pin-input').value;
+        if (pin === '1234') {
+            document.getElementById('pin-screen').classList.add('hidden');
+            document.getElementById('dashboard-content').classList.remove('hidden');
+            document.getElementById('dashboard-content').classList.add('animate__animated', 'animate__fadeIn');
+            initChart();
+        } else {
+            Swal.fire('Acceso denegado', 'PIN incorrecto', 'error');
+        }
+        document.getElementById('pin-input').value = '';
+    }
+
+    let chartInstance = null;
+
+    function initChart() {
+        const ctx = document.getElementById('evolutionChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Sesión 1', 'Sesión 2', 'Sesión 3', 'Sesión 4', 'Sesión 5'],
+                datasets: [
+                    {
+                        label: 'UAC (Aciertos)',
+                        data: [5, 8, 7, 10, 12],
+                        borderColor: '#0d9488', // Teal
+                        backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'UAI (Intentos)',
+                        data: [8, 10, 8, 12, 12],
+                        borderColor: '#e11d48', // Rose
+                        backgroundColor: 'rgba(225, 29, 72, 0.05)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    function updateDashboardFilter() {
+        const student = document.getElementById('dash-student').value;
+        const program = document.getElementById('dash-program').value;
+        const start = document.getElementById('dash-start').value;
+        const end = document.getElementById('dash-end').value;
+
+        if (!student) {
+            Swal.fire('Info', 'Seleccione un estudiante para ver estadísticas', 'info');
+            // In real app, might show aggregated stats
+            return;
+        }
+
+        Swal.showLoading();
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run.withSuccessHandler(renderDashboardData).getDashboardData(student, start, end, program);
+        } else {
+            setTimeout(() => {
+                // Mock update
+                Swal.close();
+                console.log(`Mock dashboard update for student: ${student}, program: ${program}, start: ${start}, end: ${end}`);
+                const newData = [3, 5, 2, 8, 9, 10, 15]; // Mock
+                chartInstance.data.datasets[0].data = newData;
+                chartInstance.data.datasets[1].data = newData.map(x => x + 2);
+                chartInstance.update();
+            }, 1000);
+        }
+    }
+
+    function renderDashboardData(data) {
+        Swal.close();
+        // data.records, data.recommendations
+
+        // Process data for Chart
+        // Assuming data.records is rows from Sheet
+        // Row structure: [Timestamp, ID, Fecha, Estudiante, ...]
+        // We need to aggregate UAC/UAI by Date or Session
+
+        const labels = data.records.map(r => new Date(r[2]).toLocaleDateString()); // Col C is Fecha
+        const uacData = data.records.map(r => r[8]); // Col I
+        const uaiData = data.records.map(r => r[9]); // Col J
+
+        chartInstance.data.labels = labels;
+        chartInstance.data.datasets[0].data = uacData;
+        chartInstance.data.datasets[1].data = uaiData;
+        chartInstance.update();
+
+        // Recommendations
+        const list = document.getElementById('rec-list');
+        list.innerHTML = '';
+        data.recommendations.forEach(rec => {
+            const li = document.createElement('li');
+            li.className = 'bg-white p-3 rounded shadow-sm border-l-4 border-teal-500';
+            li.innerHTML = `<div class="text-xs text-gray-400">${new Date(rec[0]).toLocaleDateString()}</div><div>${rec[2]}</div>`;
+            list.appendChild(li);
+        });
+    }
+
+    function saveRecommendation() {
+        const text = document.getElementById('recommendation-text').value;
+        const student = document.getElementById('dash-student').value;
+
+        if (!text || !student) return;
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run.saveRecommendation(student, text);
+            // Optimistic UI update
+            const list = document.getElementById('rec-list');
+            const li = document.createElement('li');
+            li.className = 'bg-white p-3 rounded shadow-sm border-l-4 border-teal-500 animate__animated animate__fadeIn';
+            li.innerHTML = `<div class="text-xs text-gray-400">Ahora</div><div>${text}</div>`;
+            list.prepend(li); // Add to top
+            document.getElementById('recommendation-text').value = '';
+        } else {
+            console.log('Rec saved mock');
+            document.getElementById('recommendation-text').value = '';
+        }
+    }
+
+    // Start
+    document.addEventListener('DOMContentLoaded', init);
+</script>

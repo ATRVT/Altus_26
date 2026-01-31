@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <base target="_top">
+    <?!= include('css'); ?>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="text-gray-800 antialiased min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-corp-primary tracking-tight">
+                        ALTUS
+                    </span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="nav-registros"
+                        class="text-gray-600 hover:text-corp-primary font-medium px-3 py-2 rounded-md transition-colors active-nav">Registros</button>
+                    <button id="nav-dashboard"
+                        class="text-gray-600 hover:text-corp-primary font-medium px-3 py-2 rounded-md transition-colors">Supervisión</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- VIEW: REGISTROS -->
+        <section id="view-registros" class="space-y-6">
+
+            <!-- Header & Config -->
+            <div class="glass-panel rounded-2xl p-6 mb-6 animate__animated animate__fadeIn">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+
+                    <!-- Type Toggle -->
+                    <div class="flex items-center justify-center md:justify-start">
+                        <span class="mr-3 text-sm font-bold text-gray-500 uppercase tracking-wide">Educativo</span>
+                        <div
+                            class="relative inline-block w-14 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="type-toggle"
+                                class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 appearance-none cursor-pointer duration-500 ease-in-out" />
+                            <label for="type-toggle"
+                                class="toggle-label block overflow-hidden h-8 rounded-full bg-gray-300 cursor-pointer duration-500 ease-in-out"></label>
+                        </div>
+                        <span
+                            class="ml-3 text-sm font-bold text-corp-primary uppercase tracking-wide">Terapéutico</span>
+                    </div>
+
+                    <!-- Date & Date Picker -->
+                    <div class="text-center md:text-right">
+                        <input type="date" id="fecha-sesion"
+                            class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full md:w-auto p-2.5 input-transition"
+                            required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="glass-panel rounded-2xl p-6 shadow-xl animate__animated animate__fadeInUp">
+                <form id="registro-form" class="space-y-6">
+
+                    <!-- Student Selection -->
+                    <div>
+                        <label for="estudiante" class="block mb-2 text-sm font-medium text-gray-900">Estudiante</label>
+                        <select id="estudiante"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 input-transition">
+                            <option value="">Seleccione estudiante...</option>
+                            <!-- Filled via JS -->
+                        </select>
+                    </div>
+
+                    <!-- DYNAMIC SECTIONS -->
+                    <div id="educational-fields" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Grado -->
+                        <div>
+                            <label for="grado" class="block mb-2 text-sm font-medium text-gray-900">Grado</label>
+                            <select id="grado"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 input-transition">
+                                <option value="">Seleccione...</option>
+                                <option>Pre-kinder</option>
+                                <option>Kinder</option>
+                                <option>Preparatoria</option>
+                                <option>1º</option>
+                                <option>2º</option>
+                                <option>3º</option>
+                                <option>4º</option>
+                                <option>5º</option>
+                            </select>
+                        </div>
+                        <!-- Materia -->
+                        <div>
+                            <label for="materia" class="block mb-2 text-sm font-medium text-gray-900">Materia</label>
+                            <select id="materia"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 input-transition">
+                                <option value="">Seleccione...</option>
+                                <option>CyL</option>
+                                <option>Matemáticas</option>
+                                <option>Ciencia</option>
+                                <option>Ciudadanía</option>
+                                <option>Artes</option>
+                                <option>Música</option>
+                                <option>Desarrollo I</option>
+                                <option>Deporte</option>
+                                <option>Juego independiente</option>
+                            </select>
+                        </div>
+                        <!-- OCP -->
+                        <div>
+                            <label for="ocp" class="block mb-2 text-sm font-medium text-gray-900">OCP</label>
+                            <select id="ocp"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 input-transition"
+                                disabled>
+                                <option value="">Seleccione Grado y Materia</option>
+                                <!-- Dynamic -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="therapeutic-fields" class="hidden">
+                        <label for="programa-terapeutico" class="block mb-2 text-sm font-medium text-gray-900">Programa
+                            Terapéutico</label>
+                        <select id="programa-terapeutico"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 input-transition">
+                            <option value="">Seleccione programa...</option>
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+
+                    <!-- Common Fields Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">UAC</label>
+                            <input type="number" id="uac"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2"
+                                placeholder="0">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">UAI</label>
+                            <input type="number" id="uai"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2"
+                                placeholder="0">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Nivel Ayuda</label>
+                            <select id="nivel-ayuda"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2">
+                                <option>Ninguna</option>
+                                <option>Gestual</option>
+                                <option>Verbal</option>
+                                <option>Física sombra</option>
+                                <option>Física parcial</option>
+                                <option>Física total</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Reforzador</label>
+                            <select id="reforzador"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2">
+                                <option>Ninguno</option>
+                                <option>Social</option>
+                                <option>Actividad</option>
+                                <option>Tangible</option>
+                                <option>Comestible</option>
+                                <option>Sensorial</option>
+                                <option>Economía</option>
+                            </select>
+                        </div>
+                        <!-- RF Programs -->
+                        <div class="col-span-2 md:col-span-4">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Programa
+                                Reforzamiento</label>
+                            <select id="prog-ref"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2">
+                                <option>RF</option>
+                                <option>RV</option>
+                                <option>IF</option>
+                                <option>IV</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex justify-end pt-4">
+                        <button type="button" id="btn-add-temp" class="btn-add-custom hover:shadow-xl transition-all">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                Agregar Registro
+                            </span>
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- Temp Table -->
+            <div class="glass-panel rounded-2xl p-6 hidden" id="temp-table-container">
+                <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                        </path>
+                    </svg>
+                    Registros de la Sesión Actual
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-white uppercase bg-corp-primary">
+                            <tr>
+                                <th class="px-4 py-3 rounded-tl-lg">Hora</th>
+                                <th class="px-4 py-3">Tipo</th>
+                                <th class="px-4 py-3">Detalle</th>
+                                <th class="px-4 py-3">UAC/UAI</th>
+                                <th class="px-4 py-3 text-right rounded-tr-lg">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="temp-table-body">
+                            <!-- Rows here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button id="btn-save-session" class="btn-primary-custom w-full md:w-auto text-center">
+                        Guardar Sesión Completa
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- VIEW: SUPERVISION / DASHBOARD -->
+        <section id="view-dashboard" class="hidden">
+            <div id="pin-screen"
+                class="glass-panel p-10 rounded-2xl max-w-sm mx-auto mt-20 text-center animate__animated animate__zoomIn">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Acceso Supervisión</h2>
+                <input type="password" id="pin-input"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-lg rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-4 text-center mb-4 tracking-widest"
+                    placeholder="PIN" maxlength="4">
+                <button id="btn-verify-pin"
+                    class="w-full text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5">Acceder</button>
+            </div>
+
+            <div id="dashboard-content" class="hidden space-y-6">
+                <!-- Filter Bar -->
+                <div class="glass-panel p-4 rounded-xl flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Estudiante</label>
+                        <select id="dash-student" class="bg-white border text-sm rounded-lg p-2 w-40"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Programa / Materia</label>
+                        <select id="dash-program" class="bg-white border text-sm rounded-lg p-2 w-40">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Desde</label>
+                        <input type="date" id="dash-start" class="bg-white border text-sm rounded-lg p-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Hasta</label>
+                        <input type="date" id="dash-end" class="bg-white border text-sm rounded-lg p-2">
+                    </div>
+                    <button id="btn-update-dash"
+                        class="bg-teal-600 text-white rounded-lg px-4 py-2 hover:bg-teal-700 text-sm font-bold">Filtrar</button>
+                </div>
+
+                <!-- Charts -->
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Evolución UAC vs UAI</h3>
+                    <div class="h-64 md:h-80">
+                        <canvas id="evolutionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Recomendaciones y Notas</h3>
+                    <textarea id="recommendation-text"
+                        class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-teal-500 focus:border-teal-500"
+                        rows="3" placeholder="Escriba una nueva recomendación..."></textarea>
+                    <button id="btn-save-rec"
+                        class="mt-2 text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2">Guardar
+                        Recomendación</button>
+
+                    <div class="mt-4 border-t pt-4">
+                        <h4 class="text-sm font-bold text-gray-500 uppercase mb-2">Historial Reciente</h4>
+                        <ul id="rec-list" class="space-y-2 text-sm text-gray-600">
+                            <!-- List items -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <?!= include('js'); ?>
+</body>
+
+</html>
