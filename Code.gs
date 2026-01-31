@@ -104,88 +104,90 @@ function saveSession(records) {
  * Gets data for the dashboard.
  */
 function getDashboardData(studentName, startDateStr, endDateStr, program) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const regSheet = ss.getSheetByName('Registros');
-  const recSheet = ss.getSheetByName('Recomendaciones');
-  
-  if (!regSheet) return { records: [], recommendations: [] };
-
-  const data = regSheet.getDataRange().getValues();
-  const headers = data.shift(); // Remove headers
-  
-  // Normalize inputs
-  const targetStudent = studentName ? String(studentName).trim() : "";
-  const targetProgram = program ? String(program).trim() : "";
-  
-  // Debug: Get all students present in the data before filtering
-  const uniqueStudents = [...new Set(data.map(r => String(r[3]).trim()))];
-
-  // Filter
-  let filtered = data.filter(row => {
-    // D is Student (index 3)
-    if (targetStudent) {
-      const rowStudent = String(row[3]).trim();
-      if (rowStudent !== targetStudent) return false;
-    }
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const regSheet = ss.getSheetByName('Registros');
+    const recSheet = ss.getSheetByName('Recomendaciones');
     
-    // G is Materia/Programa (index 6)
-    if (targetProgram) {
-      const rowProgram = String(row[6]).trim();
-      if (rowProgram !== targetProgram) return false;
-    }
+    if (!regSheet) return { error: 'Hoja "Registros" no encontrada en el Google Sheet.' };
+
+    const data = regSheet.getDataRange().getValues();
+    if (data.length === 0) return { records: [], recommendations: [], totalRows: 0, debugStudents: [] };
     
-    // Date Filtering (C is Fecha_Sesion index 2)
-    // Row val could be Date object or String
-    let rowDate = row[2];
-    if (typeof rowDate === 'string') {
-      // Try parsing YYYY-MM-DD or standard formats
-      // If it is '30/01/2026', Date.parse might fail in some locales or assume MM/DD.
-      // We assume YYYY-MM-DD from the form save.
-      rowDate = new Date(rowDate);
-    } 
-    // If it's still not a date object (e.g. valid date string converted), ensure it is.
-    if (!(rowDate instanceof Date) || isNaN(rowDate)) return false; // Invalid date in row, skip or keep? Skip to be safe.
-
-    // Strip time for strict day comparison
-    rowDate.setHours(0,0,0,0);
-
-    if (startDateStr) {
-       const start = new Date(startDateStr); // Expecting YYYY-MM-DD
-       start.setHours(0,0,0,0); 
-       // Fix timezone offset issues by treating as simple string comparison if possible? 
-       // Safer to use timestamps
-       if (rowDate.getTime() < start.getTime()) return false;
-    }
-
-    if (endDateStr) {
-       const end = new Date(endDateStr);
-       end.setHours(0,0,0,0);
-       if (rowDate.getTime() > end.getTime()) return false;
-    }
+    const headers = data.shift(); // Remove headers
     
-    return true;
-  });
-  
-  // Sort by Date (oldest first) for Chart
-  filtered.sort((a, b) => {
-    const dA = new Date(a[2]);
-    const dB = new Date(b[2]);
-    return dA - dB;
-  });
+    // Normalize inputs
+    const targetStudent = studentName ? String(studentName).trim() : "";
+    const targetProgram = program ? String(program).trim() : "";
+    
+    // Debug: Get all students present in the data before filtering
+    // Safe map handling
+    const uniqueStudents = [...new Set(data.filter(r => r && r.length > 3).map(r => String(r[3]).trim()))];
 
-  const recommendations = recSheet ? recSheet.getDataRange().getValues().slice(1) // skip header
-      .filter(row => String(row[1]).trim() === targetStudent) : [];
+    // Filter
+    let filtered = data.filter(row => {
+      if (!row || row.length < 4) return false;
       
-  // Reverse recommendations to show newest first
-  recommendations.sort((a, b) => new Date(b[0]) - new Date(a[0]));
+      // D is Student (index 3)
+      if (targetStudent) {
+        const rowStudent = String(row[3]).trim();
+        if (rowStudent !== targetStudent) return false;
+      }
+      
+      // G is Materia/Programa (index 6)
+      if (targetProgram) {
+        if (row.length <= 6) return false;
+        const rowProgram = String(row[6]).trim();
+        if (rowProgram !== targetProgram) return false;
+      }
+      
+      // Date Filtering (C is Fecha_Sesion index 2)
+      let rowDate = row[2];
+      if (typeof rowDate === 'string') {
+        rowDate = new Date(rowDate);
+      } 
+      if (!(rowDate instanceof Date) || isNaN(rowDate)) return false; 
 
-  return {
-    records: filtered, 
-    recommendations: recommendations,
-    totalRows: data.length, // Total records in sheet before filter
-    filterStudent: targetStudent,
-    debugStudents: uniqueStudents
-  };
+      rowDate.setHours(0,0,0,0);
+
+      if (startDateStr) {
+         const start = new Date(startDateStr);
+         start.setHours(0,0,0,0); 
+         if (rowDate.getTime() < start.getTime()) return false;
+      }
+
+      if (endDateStr) {
+         const end = new Date(endDateStr);
+         end.setHours(0,0,0,0);
+         if (rowDate.getTime() > end.getTime()) return false;
+      }
+      
+      return true;
+    });
+    
+    // Sort by Date (oldest first)
+    filtered.sort((a, b) => {
+      const dA = new Date(a[2]);
+      const dB = new Date(b[2]);
+      return dA - dB;
+    });
+
+    const recommendations = recSheet ? recSheet.getDataRange().getValues().slice(1)
+        .filter(row => row && row.length > 1 && String(row[1]).trim() === targetStudent) : [];
+        
+    recommendations.sort((a, b) => new Date(b[0]) - new Date(a[0]));
+
+    return {
+      records: filtered, 
+      recommendations: recommendations,
+      totalRows: data.length, 
+      filterStudent: targetStudent,
+      debugStudents: uniqueStudents
+    };
+    
+  } catch (e) {
+    return { error: 'Error DETECTADO en Code.gs: ' + e.toString() + e.stack };
+  }
 }
 
 /**
