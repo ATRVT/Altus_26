@@ -423,16 +423,24 @@
     function saveRecommendation() {
         const text = document.getElementById('recommendation-text').value;
         const student = document.getElementById('dash-student').value;
+        const supervisor = document.getElementById('supervisor-name').value;
 
-        if (!text || !student) return;
+        if (!text || !student) {
+            Swal.fire('Error', 'Debe seleccionar un estudiante y escribir un texto', 'error');
+            return;
+        }
+        if (!supervisor) {
+            Swal.fire('Error', 'Indique el nombre de la supervisora', 'error');
+            return;
+        }
 
         if (typeof google !== 'undefined' && google.script && google.script.run) {
-            google.script.run.saveRecommendation(student, text);
+            google.script.run.saveRecommendation(student, text, supervisor);
             // Optimistic UI update
             const list = document.getElementById('rec-list');
             const li = document.createElement('li');
             li.className = 'bg-white p-3 rounded shadow-sm border-l-4 border-teal-500 animate__animated animate__fadeIn';
-            li.innerHTML = `<div class="text-xs text-gray-400">Ahora</div><div>${text}</div>`;
+            li.innerHTML = `<div class="text-xs text-gray-400">Ahora - ${supervisor}</div><div>${text}</div>`;
             list.prepend(li); // Add to top
             document.getElementById('recommendation-text').value = '';
         } else {
@@ -440,7 +448,6 @@
             document.getElementById('recommendation-text').value = '';
         }
     }
-
     // Start
     document.addEventListener('DOMContentLoaded', init);
 </script>

@@ -12,6 +12,13 @@ function include(filename) {
 }
 
 /**
+ * Simple connection test
+ */
+function testConnection() {
+  return "OK";
+}
+
+/**
  * Fetches data for dropdowns from Sheets.
  * Returns an object: { students: [], educational: [], therapeutic: [] }
  */
@@ -106,45 +113,95 @@ function getDashboardData(studentName, startDateStr, endDateStr, program) {
   const data = regSheet.getDataRange().getValues();
   const headers = data.shift(); // Remove headers
   
+  // Normalize inputs
+  const targetStudent = studentName ? String(studentName).trim() : "";
+  const targetProgram = program ? String(program).trim() : "";
+  
+  // Debug: Get all students present in the data before filtering
+  const uniqueStudents = [...new Set(data.map(r => String(r[3]).trim()))];
+
   // Filter
   let filtered = data.filter(row => {
     // D is Student (index 3)
-    if (studentName && row[3] !== studentName) return false;
+    if (targetStudent) {
+      const rowStudent = String(row[3]).trim();
+      if (rowStudent !== targetStudent) return false;
+    }
     
     // G is Materia/Programa (index 6)
-    if (program && row[6] !== program) return false;
+    if (targetProgram) {
+      const rowProgram = String(row[6]).trim();
+      if (rowProgram !== targetProgram) return false;
+    }
     
-    // Date Filtering (C is Fecha_Sesion index 2) - assuming string match or simple compare
-    // Ideally user inputs ISO strings, sheet has strings or date objects.
-    // For specific date filtering, we'd convert these.
-    // Simplifying for this demo: if start/end provided, we assume strict greater/less check
-    if (startDateStr && endDateStr) {
-       const rowDate = new Date(row[2]);
-       const start = new Date(startDateStr);
+    // Date Filtering (C is Fecha_Sesion index 2)
+    // Row val could be Date object or String
+    let rowDate = row[2];
+    if (typeof rowDate === 'string') {
+      // Try parsing YYYY-MM-DD or standard formats
+      // If it is '30/01/2026', Date.parse might fail in some locales or assume MM/DD.
+      // We assume YYYY-MM-DD from the form save.
+      rowDate = new Date(rowDate);
+    } 
+    // If it's still not a date object (e.g. valid date string converted), ensure it is.
+    if (!(rowDate instanceof Date) || isNaN(rowDate)) return false; // Invalid date in row, skip or keep? Skip to be safe.
+
+    // Strip time for strict day comparison
+    rowDate.setHours(0,0,0,0);
+
+    if (startDateStr) {
+       const start = new Date(startDateStr); // Expecting YYYY-MM-DD
+       start.setHours(0,0,0,0); 
+       // Fix timezone offset issues by treating as simple string comparison if possible? 
+       // Safer to use timestamps
+       if (rowDate.getTime() < start.getTime()) return false;
+    }
+
+    if (endDateStr) {
        const end = new Date(endDateStr);
-       if (rowDate < start || rowDate > end) return false;
+       end.setHours(0,0,0,0);
+       if (rowDate.getTime() > end.getTime()) return false;
     }
     
     return true;
   });
   
+  // Sort by Date (oldest first) for Chart
+  filtered.sort((a, b) => {
+    const dA = new Date(a[2]);
+    const dB = new Date(b[2]);
+    return dA - dB;
+  });
+
   const recommendations = recSheet ? recSheet.getDataRange().getValues().slice(1) // skip header
-      .filter(row => row[1] === studentName) : [];
+      .filter(row => String(row[1]).trim() === targetStudent) : [];
+      
+  // Reverse recommendations to show newest first
+  recommendations.sort((a, b) => new Date(b[0]) - new Date(a[0]));
 
   return {
-    records: filtered, // Return all matching filter
-    recommendations: recommendations
+    records: filtered, 
+    recommendations: recommendations,
+    totalRows: data.length, // Total records in sheet before filter
+    filterStudent: targetStudent,
+    debugStudents: uniqueStudents
   };
 }
 
 /**
  * Saves a recommendation.
  */
-function saveRecommendation(student, recommendation) {
+function saveRecommendation(student, recommendation, supervisor) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Recomendaciones');
   if (!sheet) return { success: false, message: 'Hoja "Recomendaciones" no encontrada' };
   
-  sheet.appendRow([new Date(), student, recommendation]);
+  // Columns: A: Fecha, B: Estudiante, C: Supervisora, D: Recomendacion
+  sheet.appendRow([
+    new Date(), 
+    student, 
+    supervisor || Session.getActiveUser().getEmail(), 
+    recommendation
+  ]);
   return { success: true };
 }

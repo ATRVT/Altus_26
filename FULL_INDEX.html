@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <base target="_top">
+    <!-- INICIO CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+    <style>
+        :root {
+            --primary-color: #385da9;
+            /* Corporate Blue */
+            --secondary-color: #faac3c;
+            /* Corporate Yellow */
+            --accent-color: #e5442a;
+            /* Corporate Red/Orange */
+        }
+
+        /* Corporate Identity Utilities */
+        .text-corp-primary {
+            color: var(--primary-color) !important;
+        }
+
+        .text-corp-secondary {
+            color: var(--secondary-color) !important;
+        }
+
+        .text-corp-accent {
+            color: var(--accent-color) !important;
+        }
+
+        .bg-corp-primary {
+            background-color: var(--primary-color) !important;
+        }
+
+        /* Form Focus Overrides */
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--secondary-color) !important;
+            --tw-ring-color: var(--secondary-color) !important;
+            box-shadow: 0 0 0 1px var(--secondary-color) !important;
+        }
+
+        /* Toggle Switch Override */
+        .toggle-checkbox:checked {
+            border-color: var(--primary-color);
+        }
+
+        .toggle-checkbox:checked+.toggle-label {
+            background-color: var(--primary-color);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f3f4f6;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Hide Number Spinners */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        /* Loader */
+        .loader {
+            border-top-color: #0d9488;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+
+        /* SAVE BUTTON (Blue) */
+        .btn-primary-custom {
+            background-color: var(--primary-color) !important;
+            color: #ffffff !important;
+            border: none;
+            padding: 12px 24px;
+            font-weight: bold;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(56, 93, 169, 0.3);
+            transition: all 0.2s;
+            text-align: center;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 48px;
+        }
+
+        .btn-primary-custom:hover {
+            background-color: #2c4a87 !important;
+            /* Darker Blue */
+            transform: translateY(-1px);
+        }
+
+        /* ADD BUTTON (Yellow - High Visibility) */
+        .btn-add-custom {
+            background-color: var(--secondary-color) !important;
+            color: #0f172a !important;
+            /* Dark text for contrast */
+            font-weight: 800;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(250, 172, 60, 0.3);
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .btn-add-custom:hover {
+            background-color: #eebb40 !important;
+            transform: translateY(-1px);
+        }
+
+        .btn-add-custom svg {
+            margin-right: 8px;
+        }
+
+        /* ACCENT/DELETE BUTTONS */
+        .btn-delete-custom {
+            color: var(--accent-color) !important;
+        }
+
+        .btn-delete-custom:hover {
+            color: #b93621 !important;
+            background-color: #fee2e2;
+        }
+
+        @keyframes spinner {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <!-- FIN CSS -->
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="text-gray-800 antialiased min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-corp-primary tracking-tight">ALTUS</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="nav-registros"
+                        class="text-gray-600 hover:text-corp-primary font-medium px-3 py-2 rounded-md transition-colors active-nav">Registros</button>
+                    <button id="nav-dashboard"
+                        class="text-gray-600 hover:text-corp-primary font-medium px-3 py-2 rounded-md transition-colors">Supervisión</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- VIEW: REGISTROS -->
+        <section id="view-registros" class="space-y-6">
+
+            <!-- Header & Config -->
+            <div class="glass-panel rounded-2xl p-6 mb-6 animate__animated animate__fadeIn">
+                <div class="flex justify-end mb-2">
+                    <button id="btn-test-conn" class="text-xs text-gray-400 underline hover:text-teal-600">Probar
+                        Conexión con Servidor</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+
+                    <!-- Type Toggle -->
+                    <div class="flex items-center justify-center md:justify-start">
+                        <span class="mr-3 text-sm font-bold text-gray-500 uppercase tracking-wide">Educativo</span>
+                        <div
+                            class="relative inline-block w-14 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="type-toggle"
+                                class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 appearance-none cursor-pointer duration-500 ease-in-out" />
+                            <label for="type-toggle"
+                                class="toggle-label block overflow-hidden h-8 rounded-full bg-gray-300 cursor-pointer duration-500 ease-in-out"></label>
+                        </div>
+                        <span
+                            class="ml-3 text-sm font-bold text-corp-primary uppercase tracking-wide">Terapéutico</span>
+                    </div>
+
+                    <!-- Date & Date Picker -->
+                    <div class="text-center md:text-right">
+                        <input type="date" id="fecha-sesion"
+                            class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full md:w-auto p-2.5 input-transition"
+                            required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="glass-panel rounded-2xl p-6 shadow-xl animate__animated animate__fadeInUp">
+                <form id="registro-form" class="space-y-6">
+
+                    <!-- Student Selection -->
+                    <div>
+                        <label for="estudiante" class="block mb-2 text-sm font-medium text-gray-900">Estudiante</label>
+                        <select id="estudiante"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 input-transition">
+                            <option value="">Seleccione estudiante...</option>
+                            <!-- Filled via JS -->
+                        </select>
+                    </div>
+
+                    <!-- DYNAMIC SECTIONS -->
+                    <div id="educational-fields" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Grado -->
+                        <div>
+                            <label for="grado" class="block mb-2 text-sm font-medium text-gray-900">Grado</label>
+                            <select id="grado"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 input-transition">
+                                <option value="">Seleccione...</option>
+                                <option>Pre-kinder</option>
+                                <option>Kinder</option>
+                                <option>Preparatoria</option>
+                                <option>1º</option>
+                                <option>2º</option>
+                                <option>3º</option>
+                                <option>4º</option>
+                                <option>5º</option>
+                            </select>
+                        </div>
+                        <!-- Materia -->
+                        <div>
+                            <label for="materia" class="block mb-2 text-sm font-medium text-gray-900">Materia</label>
+                            <select id="materia"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 input-transition">
+                                <option value="">Seleccione...</option>
+                                <option>CyL</option>
+                                <option>Matemáticas</option>
+                                <option>Ciencia</option>
+                                <option>Ciudadanía</option>
+                                <option>Artes</option>
+                                <option>Música</option>
+                                <option>Desarrollo I</option>
+                                <option>Deporte</option>
+                                <option>Juego independiente</option>
+                            </select>
+                        </div>
+                        <!-- OCP -->
+                        <div>
+                            <label for="ocp" class="block mb-2 text-sm font-medium text-gray-900">OCP</label>
+                            <select id="ocp"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 input-transition"
+                                disabled>
+                                <option value="">Seleccione Grado y Materia</option>
+                                <!-- Dynamic -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="therapeutic-fields" class="hidden">
+                        <label for="programa-terapeutico" class="block mb-2 text-sm font-medium text-gray-900">Programa
+                            Terapéutico</label>
+                        <select id="programa-terapeutico"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 input-transition">
+                            <option value="">Seleccione programa...</option>
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+
+                    <!-- Common Fields Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">UAC</label>
+                            <input type="number" id="uac"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2"
+                                placeholder="0">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">UAI</label>
+                            <input type="number" id="uai"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2"
+                                placeholder="0">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Nivel Ayuda</label>
+                            <select id="nivel-ayuda"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2">
+                                <option>Ninguna</option>
+                                <option>Gestual</option>
+                                <option>Verbal</option>
+                                <option>Física sombra</option>
+                                <option>Física parcial</option>
+                                <option>Física total</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Reforzador</label>
+                            <select id="reforzador"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2">
+                                <option>Ninguno</option>
+                                <option>Social</option>
+                                <option>Actividad</option>
+                                <option>Tangible</option>
+                                <option>Comestible</option>
+                                <option>Sensorial</option>
+                                <option>Economía</option>
+                            </select>
+                        </div>
+                        <!-- RF Programs -->
+                        <div class="col-span-2 md:col-span-4">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Programa
+                                Reforzamiento</label>
+                            <select id="prog-ref"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm p-2">
+                                <option>RF</option>
+                                <option>RV</option>
+                                <option>IF</option>
+                                <option>IV</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex justify-end pt-4">
+                        <button type="button" id="btn-add-temp" class="btn-add-custom hover:shadow-xl transition-all">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                Agregar Registro
+                            </span>
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- Temp Table -->
+            <div class="glass-panel rounded-2xl p-6 hidden" id="temp-table-container">
+                <h3 class="text-lg font-bold text-corp-primary mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                        </path>
+                    </svg>
+                    Registros de la Sesión Actual
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-white uppercase bg-corp-primary">
+                            <tr>
+                                <th class="px-4 py-3 rounded-tl-lg">Hora</th>
+                                <th class="px-4 py-3">Tipo</th>
+                                <th class="px-4 py-3">Detalle</th>
+                                <th class="px-4 py-3">UAC/UAI</th>
+                                <th class="px-4 py-3 text-right rounded-tr-lg">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="temp-table-body">
+                            <!-- Rows here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button id="btn-save-session" class="btn-primary-custom w-full md:w-auto text-center">
+                        Guardar Sesión Completa
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- VIEW: SUPERVISION / DASHBOARD -->
+        <section id="view-dashboard" class="hidden">
+            <div id="pin-screen"
+                class="glass-panel p-10 rounded-2xl max-w-sm mx-auto mt-20 text-center animate__animated animate__zoomIn">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Acceso Supervisión</h2>
+                <input type="password" id="pin-input"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-lg rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-4 text-center mb-4 tracking-widest"
+                    placeholder="PIN" maxlength="4">
+                <button id="btn-verify-pin"
+                    class="w-full text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5">Acceder</button>
+            </div>
+
+            <div id="dashboard-content" class="hidden space-y-6">
+                <!-- Filter Bar -->
+                <div class="glass-panel p-4 rounded-xl flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Estudiante</label>
+                        <select id="dash-student" class="bg-white border text-sm rounded-lg p-2 w-40"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Programa / Materia</label>
+                        <select id="dash-program" class="bg-white border text-sm rounded-lg p-2 w-40">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Desde</label>
+                        <input type="date" id="dash-start" class="bg-white border text-sm rounded-lg p-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Hasta</label>
+                        <input type="date" id="dash-end" class="bg-white border text-sm rounded-lg p-2">
+                    </div>
+                    <button id="btn-update-dash"
+                        class="bg-teal-600 text-white rounded-lg px-4 py-2 hover:bg-teal-700 text-sm font-bold">Filtrar</button>
+                </div>
+
+                <!-- Charts -->
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Evolución UAC vs UAI</h3>
+                    <div class="h-64 md:h-80">
+                        <canvas id="evolutionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Recomendaciones y Notas</h3>
+
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-corp-primary uppercase mb-1">Nombre de
+                            Supervisora</label>
+                        <input type="text" id="supervisor-name"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5"
+                            placeholder="Escriba su nombre...">
+                    </div>
+
+                    <textarea id="recommendation-text"
+                        class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-teal-500 focus:border-teal-500"
+                        rows="3" placeholder="Escriba una nueva recomendación..."></textarea>
+                    <button id="btn-save-rec"
+                        class="mt-2 text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 bg-corp-primary">Guardar
+                        Recomendación</button>
+
+                    <div class="mt-4 border-t pt-4">
+                        <h4 class="text-sm font-bold text-gray-500 uppercase mb-2">Historial Reciente</h4>
+                        <ul id="rec-list" class="space-y-2 text-sm text-gray-600">
+                            <!-- List items -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- INICIO JS -->
+    <script>
+        // Global State
+        let studentsList = [];
+        let educationalBase = [];
+        let therapeuticBase = [];
+        let currentSession = [];
+        let sessionId = null;
+
+        const isLocal = location.hostname === 'localhost' || location.hostname === '';
+
+        function init() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha-sesion').value = today;
+            sessionId = 'SES-' + Date.now();
+
+            loadInitialData();
+            setupListeners();
+        }
+
+        function loadInitialData() {
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run.withSuccessHandler(populateFields).getData();
+            } else {
+                console.log('Using mock data');
+                const mockData = {
+                    students: ['Juan Perez', 'Maria Garcia'],
+                    educational: [{ grado: '3º', materia: 'Matemáticas', ocp: 'Suma' }],
+                    therapeutic: ['Control de Impulsos']
+                };
+                populateFields(mockData);
+            }
+        }
+
+        function populateFields(data) {
+            studentsList = data.students || [];
+            educationalBase = data.educational || [];
+            therapeuticBase = data.therapeutic || [];
+
+            const studentSelect = document.getElementById('estudiante');
+            const dashStudent = document.getElementById('dash-student');
+
+            studentSelect.innerHTML = '<option value="">Seleccione estudiante...</option>';
+            dashStudent.innerHTML = '<option value="">Todos</option>';
+
+            studentsList.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s;
+                opt.textContent = s;
+                studentSelect.appendChild(opt);
+                const dOpt = opt.cloneNode(true);
+                dashStudent.appendChild(dOpt);
+            });
+
+            // Populate Dashboard Programs
+            const dashProg = document.getElementById('dash-program');
+            dashProg.innerHTML = '<option value="">Todos</option>';
+            const allPrograms = new Set();
+            educationalBase.forEach(e => allPrograms.add(e.materia));
+            therapeuticBase.forEach(t => allPrograms.add(t));
+
+            [...allPrograms].sort().forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                dashProg.appendChild(opt);
+            });
+        }
+
+        function setupListeners() {
+            document.getElementById('type-toggle').addEventListener('change', (e) => {
+                const isTherapeutic = e.target.checked;
+                if (isTherapeutic) {
+                    document.getElementById('educational-fields').classList.add('hidden');
+                    document.getElementById('therapeutic-fields').classList.remove('hidden');
+                    loadTherapeuticPrograms();
+                } else {
+                    document.getElementById('educational-fields').classList.remove('hidden');
+                    document.getElementById('therapeutic-fields').classList.add('hidden');
+                }
+            });
+
+            const gradoSel = document.getElementById('grado');
+            const materiaSel = document.getElementById('materia');
+            [gradoSel, materiaSel].forEach(el => el.addEventListener('change', updateOCP));
+
+            document.getElementById('btn-add-temp').addEventListener('click', addToTemp);
+
+            document.getElementById('temp-table-body').addEventListener('click', (e) => {
+                if (e.target.closest('.delete-row-btn')) {
+                    const row = e.target.closest('tr');
+                    const index = row.dataset.index;
+                    currentSession.splice(index, 1);
+                    renderTempTable();
+                }
+            });
+
+            document.getElementById('btn-save-session').addEventListener('click', saveSessionToSheets);
+            document.getElementById('nav-registros').addEventListener('click', () => switchView('registros'));
+            document.getElementById('nav-dashboard').addEventListener('click', () => switchView('dashboard'));
+            document.getElementById('btn-verify-pin').addEventListener('click', verifyPin);
+
+            // Auto-update dashboard on filters change
+            document.getElementById('btn-update-dash').addEventListener('click', updateDashboardFilter);
+            ['dash-student', 'dash-program', 'dash-start', 'dash-end'].forEach(id => {
+                document.getElementById(id).addEventListener('change', updateDashboardFilter);
+            });
+
+            document.getElementById('btn-save-rec').addEventListener('click', saveRecommendation);
+            document.getElementById('btn-test-conn').addEventListener('click', runConnectionTest);
+        }
+
+        function runConnectionTest() {
+            const btn = document.getElementById('btn-test-conn');
+            btn.textContent = 'Probando...';
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(() => {
+                        btn.textContent = '✅ Conexión OK';
+                        setTimeout(() => btn.textContent = 'Probar Conexión con Servidor', 3000);
+                    })
+                    .withFailureHandler((e) => {
+                        alert('❌ Error de Coenxión: ' + e.message);
+                        btn.textContent = '❌ Error';
+                    })
+                    .testConnection();
+            } else {
+                alert('Modo Local (Sin servidor)');
+                btn.textContent = 'Modo Local';
+            }
+        }
+
+        function loadTherapeuticPrograms() {
+            const sel = document.getElementById('programa-terapeutico');
+            if (sel.options.length > 1) return;
+            therapeuticBase.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                sel.appendChild(opt);
+            });
+        }
+
+        function updateOCP() {
+            const grado = document.getElementById('grado').value;
+            const materia = document.getElementById('materia').value;
+            const ocpSel = document.getElementById('ocp');
+            ocpSel.innerHTML = '<option value="">Seleccione OCP...</option>';
+
+            if (!grado || !materia) {
+                ocpSel.disabled = true;
+                return;
+            }
+
+            const matches = educationalBase.filter(item => item.grado === grado && item.materia === materia);
+            if (matches.length > 0) {
+                ocpSel.disabled = false;
+                matches.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.ocp;
+                    opt.textContent = m.ocp;
+                    ocpSel.appendChild(opt);
+                });
+            } else {
+                ocpSel.innerHTML = '<option value="">No hay OCPs disponibles</option>';
+                ocpSel.disabled = true;
+            }
+        }
+
+        function addToTemp() {
+            const isTherapeutic = document.getElementById('type-toggle').checked;
+            const student = document.getElementById('estudiante').value;
+
+            if (!student) {
+                Swal.fire({ icon: 'error', title: 'Falta información', text: 'Seleccione un estudiante' });
+                return;
+            }
+
+            const record = {
+                idSesion: sessionId,
+                fechaSesion: document.getElementById('fecha-sesion').value,
+                estudiante: student,
+                tipoRegistro: isTherapeutic ? 'Terapéutico' : 'Educativo',
+                grado: document.getElementById('grado').value,
+                materia: document.getElementById('materia').value,
+                ocp: document.getElementById('ocp').value,
+                programaTerapeutico: document.getElementById('programa-terapeutico').value,
+                uac: document.getElementById('uac').value || 0,
+                uai: document.getElementById('uai').value || 0,
+                nivelAyuda: document.getElementById('nivel-ayuda').value,
+                reforzador: document.getElementById('reforzador').value,
+                programaReforzamiento: document.getElementById('prog-ref').value
+            };
+
+            if (isTherapeutic && !record.programaTerapeutico) {
+                Swal.fire('Error', 'Seleccione un programa terapéutico', 'error');
+                return;
+            }
+            if (!isTherapeutic && (!record.grado || !record.materia)) {
+                Swal.fire('Error', 'Seleccione grado y materia', 'error');
+                return;
+            }
+
+            if (isTherapeutic) {
+                record.materia = record.programaTerapeutico;
+                record.ocp = '-';
+                record.grado = '-';
+            }
+
+            currentSession.push(record);
+            renderTempTable();
+            document.getElementById('uac').value = '';
+            document.getElementById('uai').value = '';
+        }
+
+        function renderTempTable() {
+            const tbody = document.getElementById('temp-table-body');
+            const container = document.getElementById('temp-table-container');
+            tbody.innerHTML = '';
+
+            if (currentSession.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+
+            currentSession.forEach((r, idx) => {
+                const detail = r.tipoRegistro === 'Educativo' ? `${r.materia} - ${r.ocp}` : r.materia;
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const row = `
+              <tr class="bg-white border-b hover:bg-gray-50 transition" data-index="${idx}">
+                 <td class="px-4 py-3 font-medium text-gray-900">${time}</td>
+                 <td class="px-4 py-3">
+                   <span class="${r.tipoRegistro === 'Educativo' ? 'bg-blue-100 text-corp-primary' : 'bg-orange-100 text-corp-secondary'} text-xs font-bold mr-2 px-2.5 py-0.5 rounded">
+                     ${r.tipoRegistro}
+                   </span>
+                 </td>
+                 <td class="px-4 py-3 text-gray-600 truncate max-w-xs" title="${detail}">${detail}</td>
+                 <td class="px-4 py-3 font-mono text-xs font-bold">${r.uac} / ${r.uai}</td>
+                 <td class="px-4 py-3 text-right">
+                    <button class="delete-row-btn btn-delete-custom transition-colors transform hover:scale-110">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                 </td>
+              </tr>
+            `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        function saveSessionToSheets() {
+            if (currentSession.length === 0) return;
+
+            Swal.fire({
+                title: 'Guardando...',
+                text: 'Enviando datos a la hoja de cálculo',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler((res) => {
+                        Swal.fire('¡Éxito!', res.message, 'success');
+                        currentSession = [];
+                        renderTempTable();
+                        sessionId = 'SES-' + Date.now();
+                    })
+                    .withFailureHandler((err) => {
+                        Swal.fire('Error', 'Fallo al guardar: ' + err.message, 'error');
+                    })
+                    .saveSession(currentSession);
+            } else {
+                setTimeout(() => {
+                    Swal.fire('¡Éxito!', '(Simulacro) Sesión guardada', 'success');
+                    currentSession = [];
+                    renderTempTable();
+                    sessionId = 'SES-' + Date.now();
+                }, 1000);
+            }
+        }
+
+        function switchView(viewName) {
+            if (viewName === 'registros') {
+                document.getElementById('view-registros').classList.remove('hidden');
+                document.getElementById('view-dashboard').classList.add('hidden');
+                document.getElementById('nav-registros').classList.add('text-teal-600', 'bg-gray-50');
+                document.getElementById('nav-dashboard').classList.remove('text-teal-600', 'bg-gray-50');
+            } else {
+                document.getElementById('view-registros').classList.add('hidden');
+                document.getElementById('view-dashboard').classList.remove('hidden');
+                document.getElementById('nav-dashboard').classList.add('text-teal-600', 'bg-gray-50');
+                document.getElementById('nav-registros').classList.remove('text-teal-600', 'bg-gray-50');
+            }
+        }
+
+        function verifyPin() {
+            const pin = document.getElementById('pin-input').value;
+            if (pin === '1234') {
+                document.getElementById('pin-screen').classList.add('hidden');
+                document.getElementById('dashboard-content').classList.remove('hidden');
+                document.getElementById('dashboard-content').classList.add('animate__animated', 'animate__fadeIn');
+                initChart();
+            } else {
+                Swal.fire('Acceso denegado', 'PIN incorrecto', 'error');
+            }
+            document.getElementById('pin-input').value = '';
+        }
+
+        let chartInstance = null;
+        function initChart() {
+            const ctx = document.getElementById('evolutionChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'UAC (Aciertos)',
+                            data: [],
+                            borderColor: '#0d9488',
+                            backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'UAI (Intentos)',
+                            data: [],
+                            borderColor: '#e11d48',
+                            backgroundColor: 'rgba(225, 29, 72, 0.05)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 20 // Fixed scale request
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDashboardFilter() {
+            const student = document.getElementById('dash-student').value;
+            const program = document.getElementById('dash-program').value;
+            const start = document.getElementById('dash-start').value;
+            const end = document.getElementById('dash-end').value;
+
+            if (!student) {
+                // If no student selected, clear chart silently
+                chartInstance.data.labels = [];
+                chartInstance.data.datasets.forEach(bs => bs.data = []);
+                chartInstance.update();
+                return;
+            }
+
+            // Show loading toast instead of full blocker to be less intrusive on auto-update
+            const Toast = Swal.mixin({
+                toast: true, position: 'top-end', showConfirmButton: false, timer: 1000, timerProgressBar: true
+            });
+            Toast.fire({ icon: 'info', title: 'Cargando...' });
+
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(renderDashboardData)
+                    .withFailureHandler(err => alert('Error en servidor: ' + err.message))
+                    .getDashboardData(student, start, end, program);
+            } else {
+                // Mock
+                console.log('Mock fetch for', student);
+            }
+        }
+
+        function renderDashboardData(data) {
+            Swal.close();
+
+            // DEBUG DIAGNOSTIC
+            if (!data.records.length && !data.recommendations.length) {
+                let debugInfo = `
+             Búsqueda para: "${data.filterStudent}"
+             Total Registros en Hoja: ${data.totalRows}
+             Estudiantes encontrados en BD:
+             [${data.debugStudents ? data.debugStudents.join(', ') : '?'}]
+
+             Si su estudiante no está en la lista de 'Encontrados', revise si guardó la sesión.
+             `;
+
+                alert('⚠️ NO SE ENCONTRARON DATOS PARA MOSTRAR\n' + debugInfo);
+
+                // Clear chart
+                chartInstance.data.labels = [];
+                chartInstance.data.datasets.forEach(bs => bs.data = []);
+                chartInstance.update();
+                return;
+            }
+
+            const labels = data.records.map(r => new Date(r[2]).toLocaleDateString());
+            const uacData = data.records.map(r => r[8]);
+            const uaiData = data.records.map(r => r[9]);
+
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets[0].data = uacData;
+            chartInstance.data.datasets[1].data = uaiData;
+            chartInstance.update();
+
+            const list = document.getElementById('rec-list');
+            list.innerHTML = '';
+            data.recommendations.forEach(rec => {
+                const li = document.createElement('li');
+                li.className = 'bg-white p-3 rounded shadow-sm border-l-4 border-teal-500';
+                li.innerHTML = `<div class="text-xs text-gray-400">${new Date(rec[0]).toLocaleDateString()} - ${rec[2]}</div><div>${rec[3]}</div>`;
+                list.appendChild(li);
+            });
+        }
+
+        function saveRecommendation() {
+            const text = document.getElementById('recommendation-text').value;
+            const student = document.getElementById('dash-student').value;
+            const supervisor = document.getElementById('supervisor-name').value;
+
+            if (!text || !student) {
+                Swal.fire('Error', 'Debe seleccionar un estudiante y escribir un texto', 'error');
+                return;
+            }
+            if (!supervisor) {
+                Swal.fire('Error', 'Indique el nombre de la supervisora', 'error');
+                return;
+            }
+
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run.saveRecommendation(student, text, supervisor);
+                const list = document.getElementById('rec-list');
+                const li = document.createElement('li');
+                li.className = 'bg-white p-3 rounded shadow-sm border-l-4 border-teal-500 animate__animated animate__fadeIn';
+                li.innerHTML = `<div class="text-xs text-gray-400">Ahora - ${supervisor}</div><div>${text}</div>`;
+                list.prepend(li);
+                document.getElementById('recommendation-text').value = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+    <!-- FIN JS -->
+</body>
+
+</html>
