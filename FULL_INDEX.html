@@ -604,20 +604,51 @@
 
         function runConnectionTest() {
             const btn = document.getElementById('btn-test-conn');
-            btn.textContent = 'Probando...';
+            btn.textContent = 'Analizando BD...';
+
             if (typeof google !== 'undefined' && google.script && google.script.run) {
                 google.script.run
-                    .withSuccessHandler(() => {
-                        btn.textContent = '✅ Conexión OK';
-                        setTimeout(() => btn.textContent = 'Probar Conexión con Servidor', 3000);
+                    .withSuccessHandler((data) => {
+                        btn.textContent = '✅ Análisis Listo';
+                        console.log(data);
+
+                        if (data.error) {
+                            alert('Error BD: ' + data.error);
+                            return;
+                        }
+
+                        let report = `📊 REPORTE DE BASE DE DATOS:\n`;
+                        report += `Total Filas (con cabecera): ${data.totalRows}\n\n`;
+
+                        report += `RESUMEN POR ESTUDIANTE:\n`;
+                        if (data.stats && Object.keys(data.stats).length > 0) {
+                            for (const s in data.stats) {
+                                report += `- ${s}: ${data.stats[s]} registros\n`;
+                            }
+                        } else {
+                            report += "(No hay estudiantes con registros)\n";
+                        }
+
+                        report += `\nDATOS DE MUESTRA (Fila 1):\n`;
+                        if (data.sampleRows && data.sampleRows.length > 0) {
+                            const r = data.sampleRows[0];
+                            report += `Fecha (Col C): ${r[2]}\n`;
+                            report += `Estudiante (Col D): ${r[3]}\n`;
+                            report += `Programa (Col G): ${r[6]}\n`;
+                        } else {
+                            report += "No hay datos de ejemplo.\n";
+                        }
+
+                        alert(report);
+                        setTimeout(() => btn.textContent = 'Probar Conexión', 5000);
                     })
                     .withFailureHandler((e) => {
-                        alert('❌ Error de Coenxión: ' + e.message);
+                        alert('❌ Error Servidor: ' + e.message);
                         btn.textContent = '❌ Error';
                     })
-                    .testConnection();
+                    .inspectDatabase();
             } else {
-                alert('Modo Local (Sin servidor)');
+                alert('Modo Local: No se puede inspeccionar la BD real.');
                 btn.textContent = 'Modo Local';
             }
         }

@@ -12,10 +12,36 @@ function include(filename) {
 }
 
 /**
- * Simple connection test
+ * Debug: Inspect Database Content
  */
-function testConnection() {
-  return "OK";
+function inspectDatabase() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Registros');
+  if (!sheet) return { error: 'No existe la hoja Registros' };
+  
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return { error: 'Hoja vacía (Solo cabeceras o nada)' };
+  
+  const headers = data[0];
+  const rows = data.slice(1, 6).map(row => {
+    return row.map(cell => {
+      if (cell instanceof Date) return `[DATE] ${cell.toISOString()}`;
+      return `[${typeof cell}] ${cell}`;
+    });
+  });
+  
+  const stats = {};
+  data.slice(1).forEach(r => {
+    const s = String(r[3] || 'Desconocido').trim();
+    stats[s] = (stats[s] || 0) + 1;
+  });
+  
+  return {
+    totalRows: data.length,
+    headers: headers,
+    sampleRows: rows,
+    stats: stats // New: { "Antonio Garcia": 5, ... }
+  };
 }
 
 /**
@@ -117,27 +143,26 @@ function getDashboardData(studentName, startDateStr, endDateStr, program) {
     const headers = data.shift(); // Remove headers
     
     // Normalize inputs
-    const targetStudent = studentName ? String(studentName).trim() : "";
-    const targetProgram = program ? String(program).trim() : "";
+    const targetStudent = studentName ? String(studentName).trim().toLowerCase() : "";
+    const targetProgram = (program && program.toLowerCase() !== "todos") ? String(program).trim().toLowerCase() : "";
     
-    // Debug: Get all students present in the data before filtering
-    // Safe map handling
+    // Get unique students for debugging
     const uniqueStudents = [...new Set(data.filter(r => r && r.length > 3).map(r => String(r[3]).trim()))];
 
-    // Filter
+    // Filter logic
     let filtered = data.filter(row => {
       if (!row || row.length < 4) return false;
       
-      // D is Student (index 3)
+      // Student Filter (Case Insensitive)
       if (targetStudent) {
-        const rowStudent = String(row[3]).trim();
+        const rowStudent = String(row[3]).trim().toLowerCase();
         if (rowStudent !== targetStudent) return false;
       }
       
-      // G is Materia/Programa (index 6)
+      // Program/Materia Filter (Case Insensitive)
       if (targetProgram) {
         if (row.length <= 6) return false;
-        const rowProgram = String(row[6]).trim();
+        const rowProgram = String(row[6]).trim().toLowerCase();
         if (rowProgram !== targetProgram) return false;
       }
       
